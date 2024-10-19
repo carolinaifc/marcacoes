@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marcação de Análise</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            margin: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ccc;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #007BFF;
+            font-size: 24px;
+            border-bottom: 2px solid #007BFF;
+            padding-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #007BFF;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .result-table {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .result-table th, .result-table td {
+            border: 1px solid #ccc;
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .result-table th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .checkbox-group {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .checkbox-group label {
+            display: flex; /* Altera para flex para alinhar checkbox e texto */
+            align-items: center; /* Centraliza verticalmente */
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .alert {
+            color: #d9534f; /* Cor do texto para o aviso */
+            font-weight: bold;
+            margin-top: 10px;
+            display: none; /* Inicialmente escondido */
+        }
+    </style>
+    <script>
+        // Função para mostrar resultados
+        function showResults(event) {
+            event.preventDefault(); // Impede o envio do formulário
+
+            // Obter os valores dos campos
+            const nome = document.getElementById('nome').value;
+            const data = document.getElementById('data').value;
+            const hora = document.getElementById('hora').value;
+            const local = document.getElementById('local').value;
+
+            // Obter as análises selecionadas
+            const selectedAnalises = Array.from(document.querySelectorAll('input[name="analise"]:checked')).map(checkbox => checkbox.value);
+
+            // Criar um objeto para armazenar os dados
+            const marcacao = { nome, data, hora, local, analises: selectedAnalises };
+
+            // Obter os dados existentes do Local Storage
+            let marcacoes = JSON.parse(localStorage.getItem('marcacoes')) || [];
+
+            // Adicionar a nova marcação ao array
+            marcacoes.push(marcacao);
+
+            // Salvar o array atualizado no Local Storage
+            localStorage.setItem('marcacoes', JSON.stringify(marcacoes));
+
+            // Limpar o formulário
+            document.getElementById('form').reset();
+
+            // Atualizar a tabela com as novas marcações
+            updateTable();
+
+            // Verificar avisos
+            showWarnings(selectedAnalises);
+        }
+
+        // Função para mostrar avisos com base nas análises selecionadas
+        function showWarnings(selectedAnalises) {
+            const alertBox = document.getElementById('warning');
+            alertBox.innerHTML = ''; // Limpa avisos anteriores
+            alertBox.style.display = 'none'; // Esconde avisos inicialmente
+
+            // Inicializa as mensagens de aviso
+            const jejumMessages = [];
+            const frascoMessages = [];
+
+            // Verifica as análises selecionadas
+            const jejumAnalises = ["Glicose", "Ferro", "Colesterol Total", "Colesterol HDL", "Colesterol LDL", "Triglicerídeos", "Vitamina B12"];
+            const frascoAnalises = ["Urina Sumária", "Exame Parasitológico nas Fezes", "Urocultura", "Pesquisa de Sangue Oculto nas Fezes"];
+
+            // Adiciona mensagens de jejum se necessário
+            for (const analise of jejumAnalises) {
+                if (selectedAnalises.includes(analise)) {
+                    jejumMessages.push(analise);
+                }
+            }
+
+            // Adiciona mensagens de frasco se necessário
+            for (const analise of frascoAnalises) {
+                if (selectedAnalises.includes(analise)) {
+                    frascoMessages.push(analise);
+                }
+            }
+
+            // Cria as mensagens de aviso
+            if (jejumMessages.length > 0) {
+                alertBox.innerHTML += "É necessário estar em jejum para as seguintes análises: " + jejumMessages.join(', ') + ".<br>";
+            }
+            if (frascoMessages.length > 0) {
+                const frascoAvisos = frascoMessages.map(item => {
+                    return item === "Urina Sumária" ? "Urina Sumária (é necessário trazer um frasco de urina)" : 
+                           item === "Exame Parasitológico nas Fezes" ? "Exame Parasitológico nas Fezes (é necessário trazer um frasco de fezes)" :
+                           item === "Urocultura" ? "Urocultura (é necessário trazer um frasco de urina)" :
+                           "Pesquisa de Sangue Oculto nas Fezes (é necessário trazer um frasco de fezes)";
+                });
+                alertBox.innerHTML += frascoAvisos.join('. ') + ".";
+            }
+
+            // Exibe o alertBox se houver mensagens
+            if (alertBox.innerHTML !== '') {
+                alertBox.style.display = 'block';
+            }
+        }
+
+        // Função para atualizar a tabela com as marcações do Local Storage
+        function updateTable() {
+            const resultTableBody = document.getElementById('result-table-body');
+            resultTableBody.innerHTML = ''; // Limpa a tabela existente
+
+            // Obter os dados do Local Storage
+            const marcacoes = JSON.parse(localStorage.getItem('marcacoes')) || [];
+
+            // Preencher a tabela com os dados
+            marcacoes.forEach(marcacao => {
+                const row = `<tr>
+                    <td>${marcacao.nome}</td>
+                    <td>${marcacao.data}</td>
+                    <td>${marcacao.hora}</td>
+                    <td>${marcacao.local}</td>
+                    <td>${marcacao.analises.join(', ')}</td>
+                </tr>`;
+                resultTableBody.innerHTML += row; // Adiciona a nova linha
+            });
+
+            // Mostrar a tabela se houver dados
+            document.getElementById('result').style.display = marcacoes.length > 0 ? 'block' : 'none';
+        }
+
+        // Atualiza a tabela ao carregar a página
+        window.onload = updateTable;
+    </script>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Marcação de Análise</h2>
+        <form id="form" onsubmit="showResults(event)">
+            <label for="nome">Nome:</label>
+            <input type="text" id="nome" name="nome" placeholder="Insira o seu nome" required>
+
+            <label for="data">Data:</label>
+            <input type="date" id="data" name="data" required>
+
+            <label for="hora">Hora:</label>
+            <input type="time" id="hora" name="hora" required>
+
+            <label for="local">Local:</label>
+            <select id="local" name="local" required>
+                <option value="">Selecione o local</option>
+                <option value="Clínica A">Clínica A</option>
+                <option value="Clínica B">Clínica B</option>
+                <option value="Clínica C">Clínica C</option>
+            </select>
+
+            <label for="analise">Selecione as análises:</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" name="analise" value="Ácido Fólico">Ácido Fólico</label>
+                <label><input type="checkbox" name="analise" value="Capacidade de Fixação do Ferro">Capacidade de Fixação do Ferro</label>
+                <label><input type="checkbox" name="analise" value="Colesterol HDL">Colesterol HDL</label>
+                <label><input type="checkbox" name="analise" value="Colesterol LDL">Colesterol LDL</label>
+                <label><input type="checkbox" name="analise" value="Colesterol Total">Colesterol Total</label>
+                <label><input type="checkbox" name="analise" value="Creatinina">Creatinina</label>
+                <label><input type="checkbox" name="analise" value="Exame Parasitológico nas Fezes">Exame Parasitológico nas Fezes</label>
+                <label><input type="checkbox" name="analise" value="Ferritina">Ferritina</label>
+                <label><input type="checkbox" name="analise" value="Ferro">Ferro</label>
+                <label><input type="checkbox" name="analise" value="GGT">GGT</label>
+                <label><input type="checkbox" name="analise" value="Glicose">Glicose</label>
+                <label><input type="checkbox" name="analise" value="Hemograma">Hemograma</label>
+                <label><input type="checkbox" name="analise" value="HbA1c">HbA1c</label>
+                <label><input type="checkbox" name="analise" value="Ionograma">Ionograma</label>
+                <label><input type="checkbox" name="analise" value="Pesquisa de Sangue Oculto nas Fezes">Pesquisa de Sangue Oculto nas Fezes</label>
+                <label><input type="checkbox" name="analise" value="Triglicerídeos">Triglicerídeos</label>
+                <label><input type="checkbox" name="analise" value="TSH">TSH</label>
+                <label><input type="checkbox" name="analise" value="T4 Livre">T4 Livre</label>
+                <label><input type="checkbox" name="analise" value="Ureia">Ureia</label>
+                <label><input type="checkbox" name="analise" value="Urocultura">Urocultura</label>
+                <label><input type="checkbox" name="analise" value="Urina Sumária">Urina Sumária</label>
+                <label><input type="checkbox" name="analise" value="Vitamina B12">Vitamina B12</label>
+            </div>
+
+            <button type="submit">Submeter</button>
+            <div class="alert" id="warning"></div>
+        </form>
+
+        <div id="result" style="display: none;">
+            <h2>Marcações Realizadas</h2>
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Data</th>
+                        <th>Hora</th>
+                        <th>Local</th>
+                        <th>Análises</th>
+                    </tr>
+                </thead>
+                <tbody id="result-table-body">
+                    <!-- Dados das marcações vão aparecer aqui -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
